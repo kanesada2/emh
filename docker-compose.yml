@@ -1,0 +1,37 @@
+version: '3'
+services:
+  web:
+    image: nginx:1.20.1
+    ports:
+      - "8000:80"
+    depends_on:
+      - app
+    volumes:
+      - ./docker/web/default.conf:/etc/nginx/conf.d/default.conf:delegated
+      - ./src:/var/www/html/src:delegated
+  app:
+    build: ./docker/php
+    working_dir: /var/www/html/src
+    depends_on:
+      - database
+    volumes:
+      - .:/var/www/html:delegated
+  database:
+    image: postgres
+    container_name: database
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: emh
+      POSTGRES_DB: emh
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data:delegated
+      - ./docker/postgres/init.d:/docker-entrypoint-initdb.d:delegated
+    ports:
+      - '5432:5432'
+  node:
+    image: node:14.21.3
+    command: npm run watch
+    tty: true
+    volumes:
+      - ./src:/var/www/html/src:delegated
+    working_dir: /var/www/html/src
